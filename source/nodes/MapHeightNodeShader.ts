@@ -74,25 +74,23 @@ export class MapHeightNodeShader extends MapHeightNode
 				shader.uniforms[i] = material.userData[i];
 			}
 
-			// Vertex variables
-			shader.vertexShader =
-				`
-			uniform sampler2D heightMap;
-			` + shader.vertexShader;
+		      // custom displacement logic variables
+		      shader.vertexShader = shader.vertexShader.replace(
+			"#include <displacementmap_pars_vertex>",
+			"uniform sampler2D heightMap;"
+		      );
 
-			// Vertex depth logic
-			shader.vertexShader = shader.vertexShader.replace('#include <fog_vertex>', `
-			#include <fog_vertex>
-	
-			// Calculate height of the title
+		      // custom displacement logic
+		      shader.vertexShader = shader.vertexShader.replace(
+			"#include <displacementmap_vertex>",
+			`
+			// custom displacement map
 			vec4 _theight = texture2D(heightMap, vUv);
-			float _height = ((_theight.r * 255.0 * 65536.0 + _theight.g * 255.0 * 256.0 + _theight.b * 255.0) * 0.1) - 10000.0;
-			vec3 _transformed = position + _height * normal;
-	
-			// Vertex position based on height
-			gl_Position = projectionMatrix * modelViewMatrix * vec4(_transformed, 1.0);
-			`);
-		};
+			float _height = (_theight.r * 255.0 * 256.0 + _theight.g * 255.0 + _theight.b * 255.0 / 256.0) - 32768.0;
+			transformed += normalize( objectNormal ) * _height;
+			`
+		      );
+	        };
 
 		return material;
 	}
